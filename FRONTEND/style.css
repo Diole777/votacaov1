@@ -1,0 +1,314 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    color: white;
+
+    background-size: cover;
+    background-position:center;
+}
+
+body::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(34,197,94,0.15), transparent 70%);
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+h1 {
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+select {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    color: black;
+    background: white;
+    appearance: none;
+    cursor: pointer;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+
+    outline: none;
+    transition: 0.3s;
+}
+
+input:focus,
+select:focus {
+    border: 1px solid #22c55e;
+    box-shadow: 0 0 10px #22c55e;
+}
+
+/* placeholder (inputs) */
+input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* opções do select */
+select option {
+    color: black;
+}
+
+/* central */
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding-top: 60px;
+}
+
+/*Pagina de Votação*/
+.votacao-page{
+     background: 
+        linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)),
+        url('img/Black\ theme\ 🗻🗝.jpg');
+
+    background-size: cover;
+    background-position: center;
+}
+
+.votacao-page::after{
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(34,197,94,0.2), transparent 70%);
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* card */
+.card {
+    position: relative;
+    z-index: 2;
+    width: 350px;
+    padding: 35px;
+
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+
+    transform: translateY(-10px);
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+/* inputs */
+input {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    outline: none;
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* botão */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #22c55e;
+    color: white;
+    font-weight: bold;
+
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    box-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e;
+    transform: scale(1.05);
+}
+
+/* votação */
+.votacao-box {
+    backdrop-filter: blur(25px);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 30px;
+    border-radius: 20px;
+    width: 800px;
+    max-width: 90%;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    text-align: center;
+}
+
+/* chapas */
+.chapa {
+    width: 250px;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.chapa:hover {
+    transform: translateY(-5px) scale(1.03);
+    border: 1px solid #22c55e;
+    box-shadow: 0 0 25px rgba(34,197,94,0.4);
+}
+
+.chapa::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #22c55e;
+    top: 0;
+    left: -100%;
+    transition: 0.5s;
+}
+
+.chapa:hover::before {
+    left: 100%;
+}
+
+.chapa.ativo {
+    border: 2px solid #22c55e;
+    box-shadow: 0 0 35px rgba(34,197,94,0.8);
+    transform: scale(1.05);
+}
+
+.chapa img {
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+#titulo-turma {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #22c55e;
+}
+
+option {
+    color: rgba(255, 255, 255, 0.6)
+}
+
+.votacao-box {
+    backdrop-filter: blur(25px);
+    margin-top: -50px;
+    padding-top: 40px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 30px;
+    border-radius: 20px;
+    width: 800px;
+    max-width: 90%;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    text-align: center;
+}
+
+#lista-chapas {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.chapa::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #22c55e;
+    top: 0;
+    left: -100%;
+    transition: 0.5s;
+}
+
+.chapa:hover::before {
+    left: 100%;
+}
+
+header {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #22c55e;
+}
+
+.confirmacao-page {
+     background: 
+        linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)),
+        url('img/Black\ theme\ 🗻🗝.jpg');
+
+    background-size: cover;
+    background-position: center;
+}

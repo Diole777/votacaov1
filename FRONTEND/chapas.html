@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votação - Sistema de Votação 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.35;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 15, 0, 0.7) 0%, rgba(0, 0, 0, 0.9) 100%);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 50px 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 8px 18px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: rgba(0, 255, 136, 0.9);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .header h1 span {
+            background: linear-gradient(135deg, #00ff88 0%, #00ccaa 50%, #00ff88 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% auto;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.05rem;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .turma-wrapper {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .turma-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 255, 136, 0.06);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            padding: 14px 28px;
+            border-radius: 14px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .turma-badge:hover {
+            border-color: rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .turma-badge .icon {
+            font-size: 1.5rem;
+        }
+
+        .turma-badge .info {
+            text-align: left;
+        }
+
+        .turma-badge .label {
+            display: block;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .turma-badge h2 {
+            color: #00ff88;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .chapas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 32px;
+            margin-bottom: 60px;
+        }
+
+        /* CARD CORRIGIDO */
+        .chapa-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .chapa-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 200, 255, 0.1), rgba(0, 255, 136, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            /* ✅ Removido: -webkit-mask e mask-composite */
+        }
+
+        .chapa-card:hover::before {
+            opacity: 1;
+        }
+
+        .chapa-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 255, 136, 0.15);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .foto-area {
+            height: 220px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.08) 0%, rgba(0, 150, 200, 0.08) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .foto-area::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.15) 0%, transparent 60%);
+        }
+
+        .foto-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chapa-card:hover .foto-area img {
+            transform: scale(1.08);
+        }
+
+        .foto-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 1;
+        }
+
+        .foto-placeholder .icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 10px;
+            opacity: 0.4;
+            filter: grayscale(0.5);
+        }
+
+        .foto-placeholder .text {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .card-content {
+            padding: 32px;
+        }
+
+        .chapa-header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .chapa-number {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 200, 255, 0.1));
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            color: #00ff88;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+        }
+
+        .chapa-title {
+            font-size: 1.4rem;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .candidatos-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .candidato-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .candidato-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #00ff88, #00ccaa);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .candidato-item:hover {
+            background: rgba(0, 255, 136, 0.06);
+            border-color: rgba(0, 255, 136, 0.2);
+            transform: translateX(6px);
+        }
+
+        .candidato-item:hover::before {
+            opacity: 1;
+        }
+
+        .candidato-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 200, 255, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(0, 255, 136, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .candidato-item:hover .candidato-avatar {
+            border-color: rgba(0, 255, 136, 0.5);
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.25), rgba(0, 200, 255, 0.15));
+        }
+
+        .candidato-info {
+            flex: 1;
+        }
+
+        .candidato-nome {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .candidato-cargo {
+            color: rgba(0, 255, 136, 0.8);
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-votar {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 200, 255, 0.08));
+            border: 1.5px solid rgba(0, 255, 136, 0.35);
+            border-radius: 14px;
+            color: #00ff88;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-votar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.15), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-votar:hover::before {
+            left: 100%;
+        }
+
+        .btn-votar:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 255, 0.15));
+            border-color: #00ff88;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-votar:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: rgba(0, 255, 136, 0.7);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 60px;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .chapas-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .container {
+                padding: 30px 16px;
+            }
+
+            .card-content {
+                padding: 24px;
+            }
+
+            .foto-area {
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="header">
+            <div class="header-badge"><span>🗳️</span><span>Sistema de Votação 2026</span></div>
+            <h1><span>Sua Votação</span></h1>
+            <p>Escolha sua chapa e confirme seu voto</p>
+        </div>
+        <div class="turma-wrapper">
+            <div class="turma-badge">
+                <span class="icon">🏫</span>
+                <div class="info">
+                    <span class="label">Turma Selecionada</span>
+                    <h2 id="turma-display">Carregando...</h2>
+                </div>
+            </div>
+        </div>
+        <div id="chapas-container" class="chapas-grid">
+            <div class="loading">Carregando chapas</div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix Effect
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = [];
+        for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff88';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // Carregar Chapas
+        const turma = localStorage.getItem('turma');
+        const usuario_id = localStorage.getItem('usuario_id');
+
+        if (!turma || !usuario_id) {
+            document.getElementById('chapas-container').innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">⚠️ Faça login para acessar a votação</div>';
+            document.getElementById('turma-display').textContent = "—";
+        } else {
+            document.getElementById('turma-display').textContent = turma;
+
+            fetch(`http://localhost:3000/chapas/${encodeURIComponent(turma)}`)
+                .then(res => res.json())
+                .then(candidatos => {
+                    const container = document.getElementById('chapas-container');
+                    if (!candidatos || candidatos.length === 0) {
+                        container.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">📭 Nenhuma chapa cadastrada para sua turma</div>';
+                        return;
+                    }
+
+                    const chapas = {};
+                    candidatos.forEach(c => {
+                        if (!chapas[c.chapa]) chapas[c.chapa] = [];
+                        chapas[c.chapa].push(c);
+                    });
+
+                    let html = '';
+                    for (const [nomeChapa, membros] of Object.entries(chapas)) {
+                        membros.sort((a, b) => a.cargo === 'Líder' ? -1 : 1);
+                        const fotoUrl = membros[0].foto_url;
+                        const fotoHtml = fotoUrl
+                            ? `<img src="http://localhost:3000${fotoUrl}" alt="${nomeChapa}">`
+                            : `<div class="foto-placeholder"><span class="icon">👥</span><span class="text">Foto da Chapa</span></div>`;
+
+                        let candidatosHtml = '';
+                        membros.forEach(m => {
+                            const icon = m.cargo === 'Líder' ? '👔' : '🤝';
+                            candidatosHtml += `<div class="candidato-item"><div class="candidato-avatar">${icon}</div><div class="candidato-info"><div class="candidato-nome">${m.nome}</div><div class="candidato-cargo">${m.cargo}</div></div></div>`;
+                        });
+
+                        html += `<div class="chapa-card"><div class="foto-area">${fotoHtml}</div><div class="card-content"><div class="chapa-header"><div class="chapa-number">🏆 ${nomeChapa}</div><div class="chapa-title">Conheça os candidatos</div></div><div class="candidatos-list">${candidatosHtml}</div><button class="btn-votar" onclick="votar('${nomeChapa}')"><span>✅</span> Confirmar voto</button></div></div>`;
+                    }
+                    container.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error('Erro:', err);
+                    document.getElementById('chapas-container').innerHTML = '<div class="empty-msg" style="grid-column: 1/-1; border-color: #ff4444; color: #ff6666;">❌ Erro ao carregar chapas. Tente novamente.</div>';
+                });
+        }
+
+        function votar(chapa) {
+            if (!confirm(`🗳️ CONFIRMAÇÃO DE VOTO\n\nVocê está prestes a votar na:\n\n${chapa}\n\nEste voto NÃO poderá ser alterado.\n\nDeseja confirmar?`)) return;
+
+            fetch('http://localhost:3000/votar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id: Number(usuario_id), turma, chapa })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.erro) { alert('❌ ' + data.erro); return; }
+                    window.location.href = 'confirmacao.html';
+                })
+                .catch(err => {
+                    console.error('Erro ao votar:', err);
+                    alert('❌ Erro ao enviar voto. Tente novamente.');
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload de Fotos</title>
+    <style>
+        body { font-family: sans-serif; background: #f1f5f9; padding: 40px; max-width: 500px; margin: auto; }
+        select, input, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+        button { background: #2563eb; color: white; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        #msg { margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>📷 Upload de Foto do Candidato</h2>
+    <select id="candidatoSelect"><option>Carregando...</option></select>
+    <input type="file" id="fotoInput" accept="image/*">
+    <button onclick="enviarFoto()">Enviar Foto</button>
+    <p id="msg"></p>
+
+    <script>
+        // Carrega todos os candidatos sem foto (ou todos, se preferir)
+        fetch('http://localhost:3000/chapas/ALL') // Você pode ajustar a rota ou listar manualmente
+            .then(r => r.json())
+            .then(data => {
+                // Fallback: se não tiver rota ALL, liste manualmente ou use uma query simples
+                const sel = document.getElementById('candidatoSelect');
+                sel.innerHTML = '<option value="">Selecione o aluno</option>';
+                // Para simplificar, vamos buscar só 1º Ano A como exemplo. Ajuste conforme sua necessidade.
+            });
+
+        function enviarFoto() {
+            const id = document.getElementById('candidatoSelect').value;
+            const file = document.getElementById('fotoInput').files[0];
+            if (!id || !file) return document.getElementById('msg').textContent = 'Preencha todos os campos.';
+
+            const formData = new FormData();
+            formData.append('candidato_id', id);
+            formData.append('foto', file);
+
+            fetch('http://localhost:3000/upload-foto', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(res => {
+                    document.getElementById('msg').textContent = res.mensagem || res.erro;
+                    if (res.foto_url) document.getElementById('fotoInput').value = '';
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados - Votação 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        canvas#matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.25;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 20, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 50px 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            color: #00ff88;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+            letter-spacing: 4px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        header p {
+            color: rgba(0, 255, 136, 0.7);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        .turma-badge {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.05) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 50px;
+            padding: 20px 40px;
+            text-align: center;
+            margin: 0 auto 50px;
+            max-width: 400px;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .turma-badge h2 {
+            color: #00ff88;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .turma-badge span {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .chart-wrapper {
+            background: linear-gradient(145deg, rgba(0, 30, 0, 0.8) 0%, rgba(0, 15, 0, 0.9) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.4);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.2);
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .chart-title {
+            color: #00ff88;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .total-votos {
+            color: #fff;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 200, 100, 0.1) 100%);
+            padding: 12px 30px;
+            border-radius: 50px;
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .total-votos strong {
+            color: #00ff88;
+            font-size: 1.5rem;
+        }
+
+        .chart-area {
+            height: 450px;
+            position: relative;
+        }
+
+        .ranking-container {
+            margin-top: 40px;
+        }
+
+        .ranking-title {
+            color: #00ff88;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .ranking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .ranking-card {
+            background: linear-gradient(145deg, rgba(0, 40, 0, 0.6) 0%, rgba(0, 20, 0, 0.8) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .ranking-card.loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ranking-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 255, 136, 0.8);
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .ranking-card.primeiro {
+            border-color: rgba(0, 255, 136, 0.9);
+            background: linear-gradient(145deg, rgba(0, 60, 0, 0.7) 0%, rgba(0, 30, 0, 0.9) 100%);
+        }
+
+        .ranking-posicao {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 200, 100, 0.1) 100%);
+            border: 3px solid rgba(0, 255, 136, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #00ff88;
+        }
+
+        .ranking-card .chapa-nome {
+            color: #00ff88;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .ranking-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            flex: 1;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 2rem;
+            font-weight: 800;
+            display: block;
+            line-height: 1;
+            margin-bottom: 5px;
+            transition: all 0.5s;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value.porcentagem {
+            color: #00ff88;
+        }
+
+        .ranking-barra-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .ranking-barra {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88 0%, #00cc66 50%, #00aa55 100%);
+            border-radius: 10px;
+            transition: width 1s ease-out;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            width: 0;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 100px 20px;
+            color: rgba(0, 255, 136, 0.6);
+            font-size: 1.3rem;
+            background: rgba(0, 30, 0, 0.4);
+            border-radius: 20px;
+            border: 2px dashed rgba(0, 255, 136, 0.3);
+        }
+
+        .botoes {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 40px;
+            background: transparent;
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000;
+            border: 2px solid transparent;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
+        }
+
+        .loading-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .loading-indicator.show {
+            opacity: 1;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .chart-wrapper {
+                padding: 25px;
+            }
+
+            .chart-area {
+                height: 350px;
+            }
+
+            .ranking-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="overlay"></div>
+    <div class="loading-indicator" id="loadingIndicator">🔄 Atualizando...</div>
+
+    <div class="container">
+        <header>
+            <h1>📈 Resultados em Tempo Real</h1>
+            <p>Acompanhe a evolução da votação da sua turma</p>
+        </header>
+
+        <div class="turma-badge">
+            <h2 id="turma-display">---</h2>
+            <span>Filtro Ativo</span>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <div class="chart-title">Votos por Chapa</div>
+                <div class="total-votos">Total: <strong id="total-display">0</strong> votos</div>
+            </div>
+            <div class="chart-area">
+                <canvas id="votosChart"></canvas>
+            </div>
+
+            <div class="ranking-container">
+                <div class="ranking-title">🏆 Ranking das Chapas</div>
+                <div class="ranking-grid" id="ranking-container"></div>
+            </div>
+        </div>
+
+        <div class="botoes">
+            <a href="chapas.html" class="btn">← Voltar à Votação</a>
+            <button onclick="location.reload()" class="btn">🔄 Recarregar Página</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================
+        //  EFEITO MATRIX
+        // ==========================
+        const canvasM = document.getElementById('matrix');
+        const ctxM = canvasM.getContext('2d');
+        canvasM.width = window.innerWidth;
+        canvasM.height = window.innerHeight;
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const columns = Math.floor(canvasM.width / fontSize);
+        const drops = [];
+        for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+
+        function drawMatrix() {
+            ctxM.fillStyle = 'rgba(0,0,0,0.05)';
+            ctxM.fillRect(0, 0, canvasM.width, canvasM.height);
+            ctxM.fillStyle = '#00ff88';
+            ctxM.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctxM.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvasM.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // ==========================
+        //  INICIALIZAÇÃO
+        // ==========================
+        const turmaLogada = localStorage.getItem('turma');
+        let chartInstance = null;
+        let cardsExistentes = new Map();
+
+        if (!turmaLogada) {
+            document.getElementById('turma-display').textContent = "Faça Login";
+            document.querySelector('.chart-wrapper').innerHTML = '<div class="empty-msg">❌ Faça login para ver os resultados.</div>';
+        } else {
+            document.getElementById('turma-display').textContent = turmaLogada;
+            carregarGrafico();
+            // Atualização suave a cada 5 segundos
+            setInterval(() => {
+                document.getElementById('loadingIndicator').classList.add('show');
+                setTimeout(() => {
+                    carregarGrafico();
+                    document.getElementById('loadingIndicator').classList.remove('show');
+                }, 300);
+            }, 5000);
+        }
+
+        // ==========================
+        //  FUNÇÃO PRINCIPAL DE CARREGAMENTO
+        // ==========================
+        function carregarGrafico() {
+            fetch('http://localhost:3000/resultados')
+                .then(res => res.json())
+                .then(data => {
+                    const dadosTurma = data.filter(d => d.turma === turmaLogada);
+
+                    if (!dadosTurma || dadosTurma.length === 0) {
+                        if (document.querySelector('.empty-msg')) return;
+                        document.querySelector('.chart-wrapper').innerHTML = '<div class="empty-msg">📭 Nenhum voto registrado na sua turma ainda.</div>';
+                        return;
+                    }
+
+                    // Ordenar por votos
+                    dadosTurma.sort((a, b) => b.votos - a.votos);
+
+                    const totalVotos = dadosTurma.reduce((s, d) => s + parseInt(d.votos), 0);
+
+                    // Atualizar total com animação suave
+                    const totalDisplay = document.getElementById('total-display');
+                    totalDisplay.style.transform = 'scale(1.2)';
+                    setTimeout(() => totalDisplay.style.transform = 'scale(1)', 300);
+                    totalDisplay.textContent = totalVotos;
+
+                    const labels = dadosTurma.map(d => d.chapa);
+                    const votos = dadosTurma.map(d => parseInt(d.votos));
+                    const porcentagens = dadosTurma.map(d => totalVotos > 0 ? ((d.votos / totalVotos) * 100).toFixed(1) : 0);
+                    const maxVoto = Math.max(...votos, 1);
+
+                    // Criar/atualizar gráfico
+                    const ctxChart = document.getElementById('votosChart').getContext('2d');
+                    const gradient = ctxChart.createLinearGradient(0, 0, 0, 450);
+                    gradient.addColorStop(0, 'rgba(0, 255, 136, 0.6)');
+                    gradient.addColorStop(0.5, 'rgba(0, 255, 136, 0.25)');
+                    gradient.addColorStop(1, 'rgba(0, 255, 136, 0.02)');
+
+                    if (chartInstance) {
+                        // Atualizar gráfico existente (sem piscar)
+                        chartInstance.data.labels = labels;
+                        chartInstance.data.datasets[0].data = votos;
+                        chartInstance.update('none'); // 'none' = sem animação brusca
+                    } else {
+                        // Criar gráfico pela primeira vez
+                        chartInstance = new Chart(ctxChart, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Votos',
+                                    data: votos,
+                                    borderColor: '#00ff88',
+                                    backgroundColor: gradient,
+                                    borderWidth: 4,
+                                    pointBackgroundColor: '#00ff88',
+                                    pointBorderColor: '#000',
+                                    pointBorderWidth: 3,
+                                    pointRadius: 10,
+                                    pointHoverRadius: 14,
+                                    fill: true,
+                                    tension: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 20, 0, 0.95)',
+                                        titleColor: '#00ff88',
+                                        bodyColor: '#fff',
+                                        borderColor: '#00ff88',
+                                        borderWidth: 2,
+                                        padding: 20,
+                                        callbacks: {
+                                            label: function (context) {
+                                                const idx = context.dataIndex;
+                                                return [`✓ ${context.raw} votos`, `📈 ${porcentagens[idx]}%`];
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: { color: 'rgba(0, 255, 136, 0.15)' },
+                                        ticks: { color: '#00ff88', font: { size: 14, weight: '600' } }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: { color: 'rgba(0, 255, 136, 0.15)' },
+                                        ticks: { color: 'rgba(255,255,255,0.6)', stepSize: Math.max(1, Math.ceil(maxVoto / 5)) }
+                                    }
+                                },
+                                animation: { duration: 1000 }
+                            }
+                        });
+                    }
+
+                    // Atualizar cards de ranking SEM recriar tudo
+                    atualizarRanking(dadosTurma, porcentagens);
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (!document.querySelector('.empty-msg')) {
+                        document.querySelector('.chart-wrapper').innerHTML = '<div class="empty-msg" style="color:#ff4444; border-color:#ff4444">❌ Erro ao carregar dados.</div>';
+                    }
+                });
+        }
+
+        // ==========================
+        //  ATUALIZAR RANKING (SEM PISCAR)
+        // ==========================
+        function atualizarRanking(dadosTurma, porcentagens) {
+            const container = document.getElementById('ranking-container');
+
+            // Verificar se já existem cards
+            if (cardsExistentes.size === 0) {
+                // Primeira carga - criar cards
+                dadosTurma.forEach((item, idx) => {
+                    const pct = porcentagens[idx];
+                    const posicao = idx + 1;
+                    const emoji = posicao === 1 ? '🥇' : posicao === 2 ? '🥈' : posicao === 3 ? '🥉' : `#${posicao}`;
+                    const classePrimeiro = posicao === 1 ? 'primeiro' : '';
+
+                    const card = document.createElement('div');
+                    card.className = `ranking-card ${classePrimeiro}`;
+                    card.dataset.chapa = item.chapa;
+                    card.innerHTML = `
+                        <div class="ranking-posicao">${emoji}</div>
+                        <div class="chapa-nome">${item.chapa}</div>
+                        <div class="ranking-stats">
+                            <div class="stat-box">
+                                <span class="stat-value votos">${item.votos}</span>
+                                <span class="stat-label">Votos</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value porcentagem">${pct}%</span>
+                                <span class="stat-label">Total</span>
+                            </div>
+                        </div>
+                        <div class="ranking-barra-bg">
+                            <div class="ranking-barra" style="width: 0%" data-width="${pct}%"></div>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                    cardsExistentes.set(item.chapa, card);
+
+                    // Animar entrada
+                    setTimeout(() => {
+                        card.classList.add('loaded');
+                        const barra = card.querySelector('.ranking-barra');
+                        setTimeout(() => {
+                            barra.style.width = barra.getAttribute('data-width');
+                        }, 300);
+                    }, idx * 100);
+                });
+            } else {
+                // Atualizações subsequentes - apenas atualizar valores
+                dadosTurma.forEach((item, idx) => {
+                    const card = cardsExistentes.get(item.chapa);
+                    if (card) {
+                        // Atualizar números com transição suave
+                        const votosEl = card.querySelector('.votos');
+                        const pctEl = card.querySelector('.porcentagem');
+                        const barra = card.querySelector('.ranking-barra');
+
+                        if (votosEl.textContent != item.votos) {
+                            votosEl.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                votosEl.textContent = item.votos;
+                                votosEl.style.transform = 'scale(1)';
+                            }, 200);
+                        }
+
+                        const novaPct = porcentagens[idx];
+                        if (pctEl.textContent != novaPct + '%') {
+                            pctEl.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                pctEl.textContent = novaPct + '%';
+                                pctEl.style.transform = 'scale(1)';
+                            }, 200);
+                        }
+
+                        // Atualizar barra
+                        setTimeout(() => {
+                            barra.style.width = novaPct + '%';
+                        }, 100);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

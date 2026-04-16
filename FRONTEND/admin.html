@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Reset</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.25;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at top, rgba(0, 20, 0, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 35, 0, 0.7);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.15);
+        }
+
+        h1 {
+            color: #00ff88;
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #00ff88;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1.5px solid rgba(0, 255, 136, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1.5px solid rgba(255, 68, 68, 0.5);
+            border-radius: 10px;
+            color: #ff4444;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff4444;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .msg {
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .msg.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+
+        .msg.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: rgba(0, 255, 136, 0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            color: #00ff88;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h1>🔐 Painel Admin</h1>
+        <p>Reinicie o banco de votos para uma nova eleição</p>
+
+        <div class="input-group">
+            <label>Senha de Administrador</label>
+            <input type="password" id="senhaAdmin" placeholder="Digite a senha...">
+        </div>
+
+        <button class="btn" id="btnReset" onclick="resetarBanco()">🗑️ Zerar Votos</button>
+
+        <div id="msgBox" class="msg"></div>
+
+        <a href="resultados.html" class="back-link">← Voltar aos Resultados</a>
+    </div>
+
+    <script>
+        // Matrix effect (mesmo dos outros arquivos)
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const cols = Math.floor(canvas.width / fontSize);
+        const drops = Array(cols).fill().map(() => Math.random() * -100);
+        function draw() {
+            ctx.fillStyle = 'rgba(0,0,0,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff88'; ctx.font = fontSize + 'px monospace';
+            drops.forEach((y, i) => {
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, y * fontSize);
+                if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }
+        setInterval(draw, 50);
+
+        // Função de Reset
+        async function resetarBanco() {
+            const senha = document.getElementById('senhaAdmin').value;
+            const btn = document.getElementById('btnReset');
+            const msg = document.getElementById('msgBox');
+
+            if (!senha) {
+                msg.textContent = '⚠️ Digite a senha de administrador.';
+                msg.className = 'msg error';
+                msg.style.display = 'block';
+                return;
+            }
+
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os votos registrados. Deseja continuar?')) return;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Processando...';
+            msg.style.display = 'none';
+
+            try {
+                const res = await fetch('http://localhost:3000/resetar-votos', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.textContent = data.mensagem;
+                    msg.className = 'msg success';
+                    document.getElementById('senhaAdmin').value = '';
+                } else {
+                    msg.textContent = data.erro || 'Erro ao resetar';
+                    msg.className = 'msg error';
+                }
+            } catch (e) {
+                msg.textContent = '❌ Erro de conexão com o servidor.';
+                msg.className = 'msg error';
+            } finally {
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '🗑️ Zerar Votos';
+            }
+        }
+
+        // Enter para enviar
+        document.getElementById('senhaAdmin').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') resetarBanco();
+        });
+    </script>
+</body>
+
+</html>
